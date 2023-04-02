@@ -13,8 +13,14 @@ import requests
 #직접 버튼을 누르고 페이지에서 동작을 가능하게 해주는 라이브러리
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver import ActionChains
+from selenium.webdriver.common.keys import Keys
+
+# 크롬 드라이버 가져오기
+driver = webdriver.Chrome('/usr/local/bin/chromedriver')
+
+# 여러 행동을 가능하게 해주는 ActionChains를 아까 가져온 크롬 드라이버에게 적용
+action = ActionChains(driver)
 
 # 현재 제품의 별점 1부터 5까지 전부 크롤링하여 저장하는 함수
 def OneToFive(url):
@@ -37,9 +43,6 @@ def OneToFive(url):
 
         # 지정한 경로에 있는 별점버튼 가져오기
         star_btn = driver.find_element(By.XPATH, star_path)
-
-        # 여러 행동을 가능하게 해주는 ActionChains를 아까 가져온 크롬 드라이버에게 적용
-        action = ActionChains(driver)
 
         # 별점버튼이 있는 위치로 스크롤하기 (why? -> 가끔가다가 그냥 클릭하면 해당 위치에 다른 element가 존재해서 클릭하지 못했다는 에러가 발생함)
         action.move_to_element(star_btn).perform()
@@ -210,6 +213,24 @@ def OneToFive(url):
     return all_df
 
 
+# 네이버 쇼핑 페이지 홈으로 접속하기
+driver.get("https://shopping.naver.com/home")
 
-all_df = OneToFive("https://search.shopping.naver.com/catalog/27474323524?&NaPm=ct%3Dlfz2luow%7Cci%3D81f5d4528fbcea513e01186cb1d65507b7fc92f9%7Ctr%3Dslcc%7Csn%3D95694%7Chk%3Da082cfbec494ffee2aa29b91775900d5958cf669")
+# 카테고리 버튼 경로 지정
+category_btn_path = '//*[@id="__next"]/div/div[1]/div/div/div[2]/div/div[2]/div/div[3]/button'
+
+# 카테고리 버튼 지정
+category_btn = driver.find_element(By.XPATH,category_btn_path)
+
+# # 별점버튼이 있는 위치로 스크롤하기 (why? -> 가끔가다가 그냥 클릭하면 해당 위치에 다른 element가 존재해서 클릭하지 못했다는 에러가 발생함)
+# action.move_to_element(category_btn).perform()
+
+# 로딩이 끝날때까지 잠시 대기 (이상한 값을 가져오는 경우나 에러 발생 방지)
+driver.implicitly_wait(10)
+
+# 카테고리 버튼 누르기
+category_btn.send_keys(Keys.ENTER)
+
+
+# all_df = OneToFive("https://search.shopping.naver.com/catalog/27474323524?&NaPm=ct%3Dlfz2luow%7Cci%3D81f5d4528fbcea513e01186cb1d65507b7fc92f9%7Ctr%3Dslcc%7Csn%3D95694%7Chk%3Da082cfbec494ffee2aa29b91775900d5958cf669")
 print('')
