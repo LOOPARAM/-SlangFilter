@@ -16,89 +16,121 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver import ActionChains
 
-
-#현재 제품의 별점 1부터 5까지 전부 크롤링하여 저장
+# 현재 제품의 별점 1부터 5까지 전부 크롤링하여 저장하는 함수
 def OneToFive(url):
 
-
-    driver = webdriver.Chrome('/usr/local/bin/chromedriver')
-    driver.implicitly_wait(10)
+    # 매개변수로 받은 url로 접속
     driver.get(url)
 
+    # 현재 제품의 리뷰 데이터 초기화
     data_5 = None
     data_4 = None
     data_3 = None
     data_2 = None
     data_1 = None
 
-    for i in range(2,7):
-        star_path = f"/html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[2]/div[2]/ul/li[{i}]/a"
-        # print(star_path)
-        # /html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[2]/div[2]/ul/li[2]/a
-        # /html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[2]/div[2]/ul/li[3]/a
-        # /html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[2]/div[2]/ul/li[4]/a
-        # /html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[2]/div[2]/ul/li[5]/a
-        # /html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[2]/div[2]/ul/li[6]/a
+    # 1~5점까지의 리뷰를 반복하기 위한 for문
+    for i in range(2, 7):
+
+        # 현재 반복번째의 별점의 전체 경로 지정(항상 일관성있음)
+        star_path = f'//*[@id="section_review"]/div[2]/div[2]/ul/li[{i}]/a'
+
+        # 지정한 경로에 있는 별점버튼 가져오기
         star_btn = driver.find_element(By.XPATH, star_path)
 
+        # 여러 행동을 가능하게 해주는 ActionChains를 아까 가져온 크롬 드라이버에게 적용
         action = ActionChains(driver)
+
+        # 별점버튼이 있는 위치로 스크롤하기 (why? -> 가끔가다가 그냥 클릭하면 해당 위치에 다른 element가 존재해서 클릭하지 못했다는 에러가 발생함)
         action.move_to_element(star_btn).perform()
-        driver.implicitly_wait(10)
-        star_btn.click()                
+
+        # 로딩이 끝날때까지 잠시 대기 (이상한 값을 가져오는 경우나 에러 발생 방지)
         driver.implicitly_wait(10)
 
-        # #url의 해당 주소의 페이지 가져오기
-        # webpage = requests.get(url,headers={"User-Agent":"Mozilla/5.0"})
+        # 별점버튼 누르기
+        star_btn.click()
 
+        # 로딩이 끝날때까지 잠시 대기 (이상한 값을 가져오는 경우나 에러 발생 방지)
+        driver.implicitly_wait(10)
+
+        # 드라이버를 통해 현재 있는 페이지의 소스를 가져와서 변수 webpage에 저장
         webpage = driver.page_source
 
         # 가져온 HTML를 태그로 분류하기 위해 BeautifulSoup 사용
         soup = BeautifulSoup(webpage, "html.parser")
 
-        # f"<a href="#" role="button" class="" data-nclick="N=a:rev.grd5">"
-        review_count_path = f"/html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[2]/div[2]/ul/li[{i}]/a/em"
+        # 리뷰들이 총 몇개가 존재하는지 확인을 위해 리뷰 개수가 적혀있는 text의 xpath를 지정
+        review_count_path = f'//*[@id="section_review"]/div[2]/div[2]/ul/li[{i}]/a/em'
 
+        # 리뷰들의 개수가 적힌 element를 xpath에 존재하는 element로 지정
         review_count = driver.find_element(By.XPATH, review_count_path)
-        
+
+        # 리뷰들의 개수가 적힌 element에서 text추출해서 저장
         count_str = review_count.text
 
+        # 추출한 text를 정수로 전환하기위해 필요없는 문자제거
         count_str = count_str.replace(',', '')
         count_str = count_str.replace('(', '')
         count_str = count_str.replace(')', '')
 
+        # 추출한 리뷰들의 개수를 정수형태로 저장
         count = int(count_str)
 
-        repeat = 100 if(count >= 2000) else count//20
+        # 리뷰들의 개수를 바탕으로 몇번 반복할지 결정
+        # 여기서 반복을 하는 이유는 모든 리뷰가 한페이지에서 볼 수 없기때문에 페이지를 넘겨야하는데
+        # 페이지를 넘기는 버튼을 누를 횟수만큼 반복하기 위해서이다
+        # 한번에 볼 수 있는 리뷰는 최대 2000개이르몰 만약 리뷰가 2000개를 넘어가면 100번 반복으로 설정
+        # 아니면 리뷰들의 개수를 20으로 나눈 몫으로 지정한다 여기서 20으로 나눈 이유는 한페이지에서 볼 수 있는 리뷰가 20개이기 때문이다
+        repeat = 100 if (count >= 2000) else count//20
 
-        for j in range(1,repeat+1):
-            if(j < 10):
-                review_list_path = f"/html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[3]/a[{j}]"
+        # 미리 지정한 반복 횟수만큼 반복하기
+        for j in range(1, repeat+1):
+
+            # 만약 반복횟수가 10미만이면
+            # 여기서 이렇게 조건문을 넣은 이유는 1~10까지의 버튼의 path와 11~ 의 버튼의 path가 다르기 때문이다
+            # 아래조건문들은 다 경로를 지정하므로 넘어가겠다
+            if (j < 10):
+                review_list_path = f'//*[@id="section_review"]/div[3]/a[{j}]'
                 review_list_path_next = None
-                # print(review_list_path)
             elif (j % 10 != 0):
-                review_list_path = f"/html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[3]/a[{j%10 + 1}]"
+                review_list_path = f'//*[@id="section_review"]/div[3]/a[{j%10 + 1}]'
                 review_list_path_next = None
-                # print(review_list_path)
             else:
-                review_list_path = f"/html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[3]/a[{10 if(j == 10) else 11}]"
-                review_list_path_next = f"/html/body/div/div/div[2]/div[2]/div[2]/div[3]/div[6]/div[3]/a[{11 if(j == 10) else 12}]"
-                # print(review_list_path)
-                # print(review_list_path_next)
+                review_list_path = f'//*[@id="section_review"]/div[3]/a[{10 if(j == 10) else 11}]'
+                review_list_path_next = f'//*[@id="section_review"]/div[3]/a[{11 if(j == 10) else 12}]'
+
+            # 위의 조건문에서 지정한 경로에 존재하는 element를 지정
             review_list_btn = driver.find_element(By.XPATH, review_list_path)
+
+            # # 별점버튼이 있는 위치로 스크롤하기 (why? -> 가끔가다가 그냥 클릭하면 해당 위치에 다른 element가 존재해서 클릭하지 못했다는 에러가 발생함)
+            # action.move_to_element(review_list_btn).perform()
+
+            # 로딩이 끝날때까지 잠시 대기 (이상한 값을 가져오는 경우나 에러 발생 방지)
+            driver.implicitly_wait(10)
+
+            # 넘길 리뷰페이지 버튼을 클릭하기
             review_list_btn.click()
 
-            if(j > 1):
+            # 여기 if문은 너무 속도가 빨라서 미처 로딩이 안끝났는데 값을 가져오는 현상을 막기위함이다
+            if (j > 1):
+                # 현재 문장이라는 변수는 현재 리뷰페이지에 있는 제일 위에 리뷰를 의미한다
                 now_sentence = ""
+
+                # 전의 리뷰페이지에 있던 제일 위에 리뷰와 현재 문장이 다를때까지 반복
                 while (before_sentence != now_sentence):
                     # 가져온 HTML을 class로 분류하여 댓글만 가져오기
                     webpage_just_str = str(soup.find_all(
                         attrs=('class', 'reviewItems_text__XrSSf')))
 
                     # 가져온 HTML에서 태그 br, em삭제
-                    webpage_del_tag_str_1 = webpage_just_str.replace('<br/>', '')
-                    webpage_del_tag_str_2 = webpage_del_tag_str_1.replace('<em>', '')
-                    webpage_del_tag_str_3 = webpage_del_tag_str_2.replace('</em>', '')
-                    webpage_del_tag_str_4 = webpage_del_tag_str_3.replace('</p>', '')
+                    webpage_del_tag_str_1 = webpage_just_str.replace(
+                        '<br/>', '')
+                    webpage_del_tag_str_2 = webpage_del_tag_str_1.replace(
+                        '<em>', '')
+                    webpage_del_tag_str_3 = webpage_del_tag_str_2.replace(
+                        '</em>', '')
+                    webpage_del_tag_str_4 = webpage_del_tag_str_3.replace(
+                        '</p>', '')
 
                     # 분류한 댓글들을 가각 분리하기
                     webpage_each_str = webpage_del_tag_str_4.split(
@@ -107,8 +139,8 @@ def OneToFive(url):
                     # 첫번째 인덱스에 '[' 가 들어가서 지우기
                     webpage_each_str.remove('[')
 
+                    # 현재 리뷰의 제일 위에 있느 리뷰를 저장
                     now_sentence = webpage_each_str[0]
-
 
             # 가져온 HTML을 class로 분류하여 댓글만 가져오기
             webpage_just_str = str(soup.find_all(
@@ -127,32 +159,40 @@ def OneToFive(url):
             # 첫번째 인덱스에 '[' 가 들어가서 지우기
             webpage_each_str.remove('[')
 
+            # 이때 변수값을 지정하면 다음 루프를 돌때 값을 사용하므로 상대적으로 이전 값이 된다
             before_sentence = webpage_each_str[0]
 
-            if(j == 1):
-                if i == 2:
+            # 데이터 추가
+            if i == 2:
+                if (data_5 == None):
                     data_5 = webpage_each_str
-                if i == 3:
-                    data_4 = webpage_each_str
-                if i == 4:
-                    data_3 = webpage_each_str
-                if i == 5:
-                    data_2 = webpage_each_str
-                if i == 6:
-                    data_1 = webpage_each_str
-            else:
-                if i == 2:
+                else:
                     data_5 += webpage_each_str
-                if i == 3:
+            if i == 3:
+                if (data_4 == None):
+                    data_4 = webpage_each_str
+                else:
                     data_4 += webpage_each_str
-                if i == 4:
+            if i == 4:
+                if (data_3 == None):
+                    data_3 = webpage_each_str
+                else:
                     data_3 += webpage_each_str
-                if i == 5:
+            if i == 5:
+                if (data_2 == None):
+                    data_2 = webpage_each_str
+                else:
                     data_2 += webpage_each_str
-                if i == 6:
+            if i == 6:
+                if (data_1 == None):
+                    data_1 = webpage_each_str
+                else:
                     data_1 += webpage_each_str
-            if(review_list_path_next != None and j != 100):
-                review_list_next_btn = driver.find_element(By.XPATH, review_list_path)
+            if (review_list_path_next != None and j != 100):
+                review_list_next_btn = driver.find_element(
+                    By.XPATH, review_list_path)
+                # 로딩이 끝날때까지 잠시 대기 (이상한 값을 가져오는 경우나 에러 발생 방지)
+                driver.implicitly_wait(10)
                 review_list_next_btn.click()
 
     all_df_dic = {
@@ -163,12 +203,13 @@ def OneToFive(url):
         '1': data_1
     }
 
-    all_df = pd.DataFrame.from_dict(all_df_dic,orient='index')
+    all_df = pd.DataFrame.from_dict(all_df_dic, orient='index')
 
     all_df = all_df.transpose()
 
     return all_df
 
 
-all_df = OneToFive("https://search.shopping.naver.com/catalog/34563199618?&NaPm=ct%3Dlfx8vxuo%7Cci%3Dc61fb1098b471d88fea549dcd418001208a2a78f%7Ctr%3Dslcc%7Csn%3D95694%7Chk%3D8becaba54daa26c9868980e4c93112f25adb2e38")
+
+all_df = OneToFive("https://search.shopping.naver.com/catalog/27474323524?&NaPm=ct%3Dlfz2luow%7Cci%3D81f5d4528fbcea513e01186cb1d65507b7fc92f9%7Ctr%3Dslcc%7Csn%3D95694%7Chk%3Da082cfbec494ffee2aa29b91775900d5958cf669")
 print('')
