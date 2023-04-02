@@ -7,6 +7,9 @@ from bs4 import BeautifulSoup
 #마찬가지로 웹 크롤링을 도와주는 라이브러리
 from urllib.request import Request,urlopen
 
+#Sleep함수를 위함
+import time
+
 #웹 크롤링하는거
 import requests
 
@@ -15,12 +18,18 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # 크롬 드라이버 가져오기
 driver = webdriver.Chrome('/usr/local/bin/chromedriver')
 
+driver.maximize_window()
+
 # 여러 행동을 가능하게 해주는 ActionChains를 아까 가져온 크롬 드라이버에게 적용
 action = ActionChains(driver)
+
+wait = WebDriverWait(driver, 20)
 
 # 현재 제품의 별점 1부터 5까지 전부 크롤링하여 저장하는 함수
 def OneToFive(url):
@@ -222,14 +231,43 @@ category_btn_path = '//*[@id="__next"]/div/div[1]/div/div/div[2]/div/div[2]/div/
 # 카테고리 버튼 지정
 category_btn = driver.find_element(By.XPATH,category_btn_path)
 
-# # 별점버튼이 있는 위치로 스크롤하기 (why? -> 가끔가다가 그냥 클릭하면 해당 위치에 다른 element가 존재해서 클릭하지 못했다는 에러가 발생함)
-# action.move_to_element(category_btn).perform()
-
 # 로딩이 끝날때까지 잠시 대기 (이상한 값을 가져오는 경우나 에러 발생 방지)
 driver.implicitly_wait(10)
 
 # 카테고리 버튼 누르기
 category_btn.send_keys(Keys.ENTER)
+
+# 카테고리 반복 횟수 찾기
+category_1 = driver.find_elements(
+    By.XPATH, '//*[@id="__next"]/div/div[1]/div/div/div[2]/div/div[2]/div/div[3]/div/div/div[1]/ul/li')
+    
+
+#카테고리 첫줄 반복 총 25번
+for c_1 in category_1:
+    c_1_a = c_1.find_element(By.TAG_NAME,'a')
+    act = action.move_to_element(c_1_a)
+    act.perform()
+    # 로딩이 끝날때까지 잠시 대기 (이상한 값을 가져오는 경우나 에러 발생 방지)
+    driver.implicitly_wait(10)
+    
+    category_2 = driver.find_elements(
+        By.XPATH, '//*[@id="__next"]/div/div[1]/div/div/div[2]/div/div[2]/div/div[3]/div/div/div[2]/ul/li')
+    
+    for c_2 in category_2:
+        c_2_a = c_2.find_element(By.TAG_NAME, 'a')
+        act = action.move_to_element(c_2_a)
+        act.perform()
+        # 로딩이 끝날때까지 잠시 대기 (이상한 값을 가져오는 경우나 에러 발생 방지)
+        driver.implicitly_wait(10)
+
+        category_3 = driver.find_elements(
+            By.XPATH, '//*[@id="__next"]/div/div[1]/div/div/div[2]/div/div[2]/div/div[3]/div/div/div[3]/ul/li')
+        
+        for c_3 in category_3:
+            c_3_a = c_3.find_element(By.TAG_NAME, 'a')
+            act = action.move_to_element(c_3_a)
+            print(c_1_a.text + " -> " + c_2_a.text + " -> " + c_3_a.text)
+
 
 
 # all_df = OneToFive("https://search.shopping.naver.com/catalog/27474323524?&NaPm=ct%3Dlfz2luow%7Cci%3D81f5d4528fbcea513e01186cb1d65507b7fc92f9%7Ctr%3Dslcc%7Csn%3D95694%7Chk%3Da082cfbec494ffee2aa29b91775900d5958cf669")
