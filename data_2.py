@@ -54,5 +54,16 @@ df.to_csv("train.csv")
 """
 #test데이터 생성
 
+data_5 = pd.read_table("Data/nsmc/ratings_test.txt", error_bad_lines=False)
+
+df_5 = pd.DataFrame(data_5)
+
+df_5 = df_5[['text', 'hate']]
+
+df_5['hate'] = df_5['hate'].astype(str)
+
+df_5['hate'] = df_5['hate'].replace({'0': 'true', '1': 'false'})
+
+df_5.to_csv("test.csv")
 
 print("d")
