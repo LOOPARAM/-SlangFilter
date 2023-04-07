@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+#train데이터 생성
+"""
+
 data_1 = pd.read_table("./Data/Curse-detection-data/dataset.txt",error_bad_lines=False, sep='|')
 
 df_1 = pd.DataFrame(data_1)
@@ -25,7 +28,7 @@ df_3 = pd.DataFrame(data_3)
 
 df_3 = df_3[['text', 'hate']]
 
-data_4 = pd.read_table("Data/nsmc/ratings_test.txt", error_bad_lines=False)
+data_4 = pd.read_table("Data/nsmc/ratings_train.txt", error_bad_lines=False)
 
 df_4 = pd.DataFrame(data_4)
 
@@ -34,6 +37,8 @@ df_4 = df_4[['text', 'hate']]
 df_4['hate'] = df_4['hate'].astype(str)
 
 df_4['hate'] = df_4['hate'].replace({'0': 'true', '1': 'false'})
+
+
 
 df = pd.concat([df_1,df_2,df_3,df_4])
 
@@ -44,6 +49,10 @@ for a in range(0,len(df.index)):
 
 df.index = li
 
+df.to_csv("train.csv")
+
+"""
+#test데이터 생성
 
 
 print("d")
